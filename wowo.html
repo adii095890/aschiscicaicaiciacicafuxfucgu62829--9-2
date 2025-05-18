@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADITYA JHA'S NUMBER TRACKER</title>
+    <style>
+        :root {
+            --hacker-green: #0f0;
+            --alert-red: #ff0000;
+            --bg-black: #000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background: var(--bg-black);
+            color: var(--hacker-green);
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem;
+            text-shadow: 0 0 10px var(--hacker-green);
+        }
+
+        .input-box {
+            padding: 1rem;
+            margin: 1rem;
+            border: 2px solid var(--hacker-green);
+        }
+
+        #numberInput {
+            width: 100%;
+            padding: 1rem;
+            background: #001100;
+            border: 2px solid var(--hacker-green);
+            color: var(--hacker-green);
+            font-size: 1.2rem;
+        }
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .server-btn {
+            padding: 1rem;
+            background: #002200;
+            border: 2px solid var(--hacker-green);
+            color: var(--hacker-green);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .server-code {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: var(--alert-red);
+            font-size: 0.8rem;
+        }
+
+        .terminal {
+            border: 2px solid var(--hacker-green);
+            height: 300px;
+            margin: 1rem;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #000;
+        }
+
+        .alert-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #400000;
+            border: 2px solid var(--alert-red);
+            padding: 1rem;
+            display: none;
+            animation: alertFlash 0.5s infinite;
+        }
+
+        @keyframes alertFlash {
+            0% { border-color: var(--alert-red); }
+            50% { border-color: #ff0; }
+            100% { border-color: var(--alert-red); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ADITYA JHA'S NUMBER TRACKER SYSTEM</h1>
+    </div>
+
+    <div class="input-box">
+        <input type="text" id="numberInput" placeholder="Enter mobile number with country code (+91)">
+    </div>
+
+    <div class="server-grid" id="serverGrid"></div>
+
+    <div class="terminal" id="terminal">
+        <div>> System initialized [${new Date().toLocaleTimeString()}]</div>
+    </div>
+
+    <div class="alert-box" id="alertBox">
+        <span id="alertText">⚠️ चेतावनी: अनधिकृत पहुंच!</span>
+    </div>
+
+    <script>
+        // Bihar 38 Districts Data
+        const districts = [
+            {code:"AR", name:"Araria", coords:"26.1395,87.4682", famous:"Krishna Nagar"},
+            {code:"AW", name:"Arwal", coords:"25.2456,84.6740", famous:"Sita Temple"},
+            {code:"AU", name:"Aurangabad", coords:"24.7475,84.3735", famous:"Dev Sun Temple"},
+            {code:"BA", name:"Banka", coords:"24.8861,86.9206", famous:"Mandar Hill"},
+            {code:"BE", name:"Begusarai", coords:"25.4167,86.1333", famous:"Jai Mangla Temple"},
+            {code:"BG", name:"Bhagalpur", coords:"25.2445,86.9718", famous:"Vikramshila Ruins"},
+            {code:"BJ", name:"Bhojpur", coords:"25.5559,84.6665", famous:"Bhojeshwar Temple"},
+            {code:"BU", name:"Buxar", coords:"25.5763,83.9806", famous:"Buxar Fort"},
+            {code:"DA", name:"Darbhanga", coords:"26.1690,85.8958", famous:"Kankali Temple"},
+            {code:"EC", name:"East Champaran", coords:"26.5833,84.8333", famous:"Gandhi Memorial"},
+            {code:"GA", name:"Gaya", coords:"24.7826,85.0034", famous:"Mahabodhi Temple"},
+            {code:"GO", name:"Gopalganj", coords:"26.4710,84.4379", famous:"Thawe Mandir"},
+            {code:"JA", name:"Jamui", coords:"24.9204,86.2236", famous:"Kali Temple"},
+            {code:"JE", name:"Jehanabad", coords:"25.2130,84.9948", famous:"Barabar Caves"},
+            {code:"KM", name:"Kaimur", coords:"25.0500,83.5833", famous:"Kaimur Wildlife Sanctuary"},
+            {code:"KT", name:"Katihar", coords:"25.5333,87.5833", famous:"Ganga River Front"},
+            {code:"KH", name:"Khagaria", coords:"25.5000,86.4833", famous:"Kali Temple"},
+            {code:"KI", name:"Kishanganj", coords:"26.1167,87.9333", famous:"Nehru Park"},
+            {code:"LA", name:"Lakhisarai", coords:"25.1667,86.0833", famous:"Ashokan Pillar"},
+            {code:"MP", name:"Madhepura", coords:"25.9210,86.7927", famous:"Kosi River"},
+            {code:"MB", name:"Madhubani", coords:"26.3667,86.0833", famous:"Madhubani Art"},
+            {code:"MG", name:"Munger", coords:"25.3833,86.4667", famous:"Munger Fort"},
+            {code:"MZ", name:"Muzaffarpur", coords:"26.1209,85.3647", famous:"Ramna Maidan"},
+            {code:"NL", name:"Nalanda", coords:"25.2000,85.5167", famous:"Nalanda University"},
+            {code:"NW", name:"Nawada", coords:"24.8833,85.5333", famous:"Kakolat Falls"},
+            {code:"PA", name:"Patna", coords:"25.5941,85.1376", famous:"Golghar"},
+            {code:"PU", name:"Purnia", coords:"25.7784,87.4750", famous:"Kali Temple"},
+            {code:"RO", name:"Rohtas", coords:"24.9500,84.0333", famous:"Rohtas Fort"},
+            {code:"SH", name:"Sheohar", coords:"26.5167,85.2833", famous:"Shiva Temple"},
+            {code:"SP", name:"Sheikhpura", coords:"25.1300,85.8400", famous:"Buddha Stupa"},
+            {code:"SR", name:"Saran", coords:"25.9167,84.7500", famous:"Jalebia Dham"},
+            {code:"ST", name:"Sitamarhi", coords:"26.6000,85.4800", famous:"Janaki Temple"},
+            {code:"SW", name:"Siwan", coords:"26.2167,84.3667", famous:"Harela Lake"},
+            {code:"SM", name:"Supaul", coords:"26.1167,86.6000", famous:"Kosi Barrage"},
+            {code:"SO", name:"Saharsa", coords:"25.8833,86.6000", famous:"Matsyagandha Lake"},
+            {code:"VA", name:"Vaishali", coords:"25.9833,85.1333", famous:"Ashokan Pillar"},
+            {code:"WC", name:"West Champaran", coords:"27.0833,84.0833", famous:"Valmiki Tiger Reserve"},
+            {code:"ZZ", name:"New District", coords:"25.0000,85.0000", famous:"Landmark"}
+        ];
+
+        // Initialize system
+        const terminal = document.getElementById('terminal');
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Generate server buttons
+        function createServerButtons() {
+            return districts.map((district, index) => `
+                <button class="server-btn" onclick="handleClick('${district.code}')">
+                    <div class="server-code">${district.code}</div>
+                    Server ${index+1}
+                </button>
+            `).join('');
+        }
+
+        // Handle server click
+        window.handleClick = (code) => {
+            playBeep();
+            const district = districts.find(d => d.code === code);
+            
+            terminal.innerHTML += `
+                <div style="margin-top:1rem;">
+                >> District: ${district.name}<br>
+                📍 Coordinates: ${district.coords}<br>
+                ⭐ Famous Place: ${district.famous}<br>
+                <a href="https://maps.google.com?q=${district.coords}" 
+                   target="_blank" 
+                   style="color:#ff0;text-decoration:none">
+                   [View on Map]
+                </a>
+                </div>
+            `;
+
+            showHindiAlert(`सर्वर ${code} एक्सेस किया गया`);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Sound effects
+        function playBeep() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 1000;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 100);
+        }
+
+        // Alert system
+        function showHindiAlert(message) {
+            const alertBox = document.getElementById('alertBox');
+            document.getElementById('alertText').textContent = `⚠️ ${message}`;
+            alertBox.style.display = 'block';
+            setTimeout(() => alertBox.style.display = 'none', 2000);
+        }
+
+        // Initialize
+        document.getElementById('serverGrid').innerHTML = createServerButtons();
+    </script>
+</body>
+</html>
